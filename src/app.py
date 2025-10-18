@@ -20,6 +20,61 @@ app.mount("/static", StaticFiles(directory=os.path.join(Path(__file__).parent,
           "static")), name="static")
 
 # In-memory activity database
+# Additional activities to be added at application startup
+_additional_activities = {
+    # Sports (2)
+    "Soccer Team": {
+        "description": "Competitive soccer team practicing tactical play and fitness",
+        "schedule": "Mondays and Wednesdays, 4:00 PM - 6:00 PM",
+        "max_participants": 22,
+        "participants": ["liam@mergington.edu", "noah@mergington.edu"]
+    },
+    "Track and Field": {
+        "description": "Sprint, distance, and field event training and meets",
+        "schedule": "Tuesdays and Thursdays, 4:00 PM - 5:30 PM",
+        "max_participants": 40,
+        "participants": ["ava@mergington.edu"]
+    },
+
+    # Artistic (2)
+    "Drama Club": {
+        "description": "Acting, stagecraft, and production of school plays",
+        "schedule": "Fridays, 3:30 PM - 6:00 PM",
+        "max_participants": 25,
+        "participants": ["mia@mergington.edu", "lucas@mergington.edu"]
+    },
+    "Ceramics Studio": {
+        "description": "Pottery wheel, handbuilding, and glazing techniques",
+        "schedule": "Wednesdays, 3:30 PM - 5:30 PM",
+        "max_participants": 15,
+        "participants": []
+    },
+
+    # Intellectual (2)
+    "Robotics Club": {
+        "description": "Design and build robots for competitions and learning engineering",
+        "schedule": "Mondays and Thursdays, 5:00 PM - 7:00 PM",
+        "max_participants": 18,
+        "participants": ["sophia@mergington.edu"]
+    },
+    "Debate Team": {
+        "description": "Competitive debating, research, and public speaking practice",
+        "schedule": "Tuesdays, 4:00 PM - 6:00 PM",
+        "max_participants": 20,
+        "participants": ["ethan@mergington.edu", "isabella@mergington.edu"]
+    }
+}
+
+@app.on_event("startup")
+def _merge_additional_activities():
+    """
+    Merge the additional activities into the main in-memory activities
+    database at application startup without overwriting any pre-existing keys.
+    """
+    existing = globals().get("activities")
+    if isinstance(existing, dict):
+        for name, info in _additional_activities.items():
+            existing.setdefault(name, info)
 activities = {
     "Chess Club": {
         "description": "Learn strategies and compete in chess tournaments",
@@ -61,6 +116,10 @@ def signup_for_activity(activity_name: str, email: str):
 
     # Get the specific activity
     activity = activities[activity_name]
+
+    # Validate student is not already signed up
+    if email in activity["participants"]:
+        raise HTTPException(status_code=400, detail="Student already signed up for this activity")
 
     # Add student
     activity["participants"].append(email)
